@@ -1,12 +1,59 @@
-version: '3'
+version: '3.7'
+
 services:
+
+  traefik:
+    image: "traefik:v2.1"
+    container_name: "traefik"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./traefik.yml:/traefik.yml:ro"
+
+  mdns:
+    image: hardillb/traefik-avahi-helper
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "/run/dbus/system_bus_socket:/run/dbus/system_bus_socket"
+  
   ethereum:
     image: ethereum/client-go:v1.11.6
-    ports:
-      - '8545:8545'
-      - '30303:30303'
     entrypoint: ['sh', '-c']
     command:
       [
         'mkdir -p $HOME/.geth-dev/keystore; echo ''$GETH_KEYSTORE_PASSWORD'' > $HOME/.geth-dev/password ;echo ''$GETH_KEYSTORE'' > $HOME/.geth-dev/keystore/$GETH_KEYSTORE_FILENAME; echo ''$GETH_GENESIS'' > $HOME/.geth-dev/genesis.json; geth --datadir $HOME/.geth-dev init $HOME/.geth-dev/genesis.json; geth --dev --nousb --ws --ws.addr "0.0.0.0" --ws.origins "*" --http --http.vhosts "*" --http.addr "0.0.0.0" --http.corsdomain "*" --miner.gasprice $GETH_GASPRICE --dev.period $GETH_BLOCK_TIME --rpc.allow-unprotected-txs --datadir $HOME/.geth-dev --password $HOME/.geth-dev/password',
       ]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ethereum.entrypoints=web"
+      - "traefik.http.routers.ethereum.rule=Host(`rpc-$TRAEFIK_DOMAIN`)"
+      - "traefik.http.services.ethereum.loadbalancer.server.port=8545"
+
+  portainer:
+    image: portainer/portainer
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - portainer_data:/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.portainer.entrypoints=web"
+      - "traefik.http.routers.portainer.rule=Host(`portainer-$TRAEFIK_DOMAIN`)"
+      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+
+
+  whoami:
+    image: "containous/whoami"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami.entrypoints=web"
+      - "traefik.http.routers.whoami.rule=Host(`whoami-$TRAEFIK_DOMAIN`)"
+
+networks:
+  default:
+    external:
+      name: $TRAEFIK_DEFAULT_NETWORK
+
+volumes:
+  portainer_data:

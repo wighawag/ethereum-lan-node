@@ -29,6 +29,23 @@ git clone git@github.com:wighawag/ethereum-lan-node.git
 
 ## Start
 
+We are using traefik for routing to the various service (currently only rpc.ethereu.local)
+
+Before running docker compose we create a network (instead of relying on docker compose default auto-creation):
+
+```bash
+docker network create traefik_net
+```
+
+Then you can check its status and what containers are using it via
+
+```bash
+docker network inspect traefik_net
+```
+
+Note that we have our [traefik.yml](./traefik.yml) configuration file that set some defaults.
+
+
 ```bash
 bash start.sh
 ```
