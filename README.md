@@ -10,14 +10,25 @@ Else you can have a Access Point / Wifi Client Switcher following the doc [here]
 
 ## Intalling docker
 
-```
+```bash
 curl -sSL https://get.docker.com | sh
 sudo usermod -aG docker $USER
 ```
 
 You ll need to login and out to have the docker group assigned, then you can test the installation:
 
-```
+```bash
 docker ps
 ```
 
+## Clone repo
+
+```bash
+git clone git@github.com:wighawag/ethereum-lan-node.git
+```
+
+## Start
+
+```bash
+bash start.sh
+```
