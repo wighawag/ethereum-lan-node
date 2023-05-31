@@ -1,4 +1,4 @@
-version: '3.7'
+version: '3.8'
 
 services:
 
@@ -12,14 +12,16 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./traefik.yml:/traefik.yml:ro"
 
-  mdns:
-    image: hardillb/traefik-avahi-helper
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "/run/dbus/system_bus_socket:/run/dbus/system_bus_socket"
+  # mdns:
+  #   image: hardillb/traefik-avahi-helper
+  #   volumes:
+  #     - "/var/run/docker.sock:/var/run/docker.sock:ro"
+  #     - "/run/dbus/system_bus_socket:/run/dbus/system_bus_socket"
   
   ethereum:
     image: ethereum/client-go:v1.11.6
+    ports:
+      - "8545:8545"
     entrypoint: ['sh', '-c']
     command:
       [
@@ -28,20 +30,24 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.ethereum.entrypoints=web"
-      - "traefik.http.routers.ethereum.rule=Host(`rpc-$TRAEFIK_DOMAIN`)"
+      - "traefik.http.routers.ethereum.rule=PathPrefix(`/rpc`)"
       - "traefik.http.services.ethereum.loadbalancer.server.port=8545"
+      - "traefik.http.middlewares.strip-rpc.stripprefix.prefixes=/rpc"
+      - "traefik.http.routers.ethereum.middlewares=strip-rpc@docker"
+    volumes:
+      - ./geth-dev:$HOME/.geth-dev
 
   whoami:
     image: "containous/whoami"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.whoami.entrypoints=web"
-      - "traefik.http.routers.whoami.rule=Host(`whoami-$TRAEFIK_DOMAIN`)"
+      - "traefik.http.routers.whoami.rule=PathPrefix(`/whoami`)"
+      - "traefik.http.middlewares.strip-whoami.stripprefix.prefixes=/whoami"
+      - "traefik.http.routers.whoami.middlewares=strip-whoami@docker"
+
 
 networks:
   default:
     external:
       name: $TRAEFIK_DEFAULT_NETWORK
-
-volumes:
-  portainer_data:
