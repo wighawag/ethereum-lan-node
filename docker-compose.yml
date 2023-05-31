@@ -35,7 +35,7 @@ services:
       - "traefik.http.middlewares.strip-rpc.stripprefix.prefixes=/rpc"
       - "traefik.http.routers.ethereum.middlewares=strip-rpc@docker"
     volumes:
-      - ./geth-dev:$HOME/.geth-dev
+      - geth-data:$HOME/.geth-dev
 
   whoami:
     image: "containous/whoami"
@@ -51,3 +51,6 @@ networks:
   default:
     external:
       name: $TRAEFIK_DEFAULT_NETWORK
+
+volumes:
+  geth-data:
