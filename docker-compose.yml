@@ -119,16 +119,6 @@ services:
       file: ./services/docker-compose-stats.yml
       service: stats
 
-  proxy:
-    depends_on:
-      - backend
-      - frontend
-      - stats
-    extends:
-      file: ./services/docker-compose-nginx.yml
-      service: proxy
-
-
 networks:
   default:
     name: $TRAEFIK_DEFAULT_NETWORK
