@@ -6,7 +6,7 @@ services:
     image: "traefik:v2.1"
     container_name: "traefik"
     ports:
-      - "8888:80"
+      - "80:80"
       - "8889:8080"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
