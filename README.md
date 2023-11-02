@@ -8,6 +8,23 @@ We assume you have the networking configured. Personally my ideal setup is that 
 
 Else you can have a Access Point / Wifi Client Switcher following the doc [here](docs/ap-switch.md)
 
+## We bundle AutoHotsport-Installer as submodule
+
+```sh
+git clone --recurse-submodules git@github.com:wighawag/ethereum-lan-node.git
+cd ethereum-lan-node
+```
+
+```sh
+sudo apt install hostapd dnsmasq
+sudo raspi-config # set up localization wifi country (GB for UK)
+tar -xvJf AutoHotspot-Installer/AutoHotspot-Setup.tar.xz
+cd Autohotspot
+sudo ./autohotspot-setup.sh # option 1 + option 7 
+sudo reboot
+# to force AP mode: sudo ./autohotspot-setup.sh # option 6
+```
+
 ## Intalling docker
 
 ```bash
