@@ -1,4 +1,4 @@
-version: '3.8'
+version: '3.9'
 
 services:
 
@@ -45,6 +45,88 @@ services:
       - "traefik.http.routers.whoami.rule=PathPrefix(`/whoami`)"
       - "traefik.http.middlewares.strip-whoami.stripprefix.prefixes=/whoami"
       - "traefik.http.routers.whoami.middlewares=strip-whoami@docker"
+
+################################
+
+  redis_db:
+    extends:
+      file: ./services/docker-compose-redis.yml
+      service: redis_db
+
+  db-init:
+    extends:
+      file: ./services/docker-compose-db.yml
+      service: db-init
+
+  db:
+    extends:
+      file: ./services/docker-compose-db.yml
+      service: db
+
+  backend:
+    depends_on:
+      - db
+      - redis_db
+    extends:
+      file: ./services/docker-compose-backend.yml
+      service: backend
+    links:
+      - db:database
+    environment:
+        ETHEREUM_JSONRPC_VARIANT: 'geth'
+        BLOCK_TRANSFORMER: 'clique'
+
+  visualizer:
+    extends:
+      file: ./services/docker-compose-visualizer.yml
+      service: visualizer
+
+  sig-provider:
+    extends:
+      file: ./services/docker-compose-sig-provider.yml
+      service: sig-provider
+
+  frontend:
+    depends_on:
+      - backend
+    extends:
+      file: ./services/docker-compose-frontend.yml
+      service: frontend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.routers.frontend.rule=PathPrefix(`/explorer`)"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+      - "traefik.http.middlewares.strip-explorer.stripprefix.prefixes=/explorer"
+      - "traefik.http.routers.frontend.middlewares=strip-explorer@docker"
+
+  stats-db-init:
+    extends:
+      file: ./services/docker-compose-stats.yml
+      service: stats-db-init
+
+  stats-db:
+    depends_on:
+      - backend
+    extends:
+      file: ./services/docker-compose-stats.yml
+      service: stats-db
+
+  stats:
+    depends_on:
+      - stats-db
+    extends:
+      file: ./services/docker-compose-stats.yml
+      service: stats
+
+  proxy:
+    depends_on:
+      - backend
+      - frontend
+      - stats
+    extends:
+      file: ./services/docker-compose-nginx.yml
+      service: proxy
 
 
 networks:
