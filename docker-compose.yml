@@ -7,7 +7,7 @@ services:
     container_name: "traefik"
     ports:
       - "80:80"
-      - "8081:8080"
+      - "8888:8080"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./traefik.yml:/traefik.yml:ro"
