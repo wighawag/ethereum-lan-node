@@ -49,8 +49,8 @@ services:
 
 networks:
   default:
-    external:
-      name: $TRAEFIK_DEFAULT_NETWORK
+    name: $TRAEFIK_DEFAULT_NETWORK
+    external: true
 
 volumes:
   geth-data:
