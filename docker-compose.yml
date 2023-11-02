@@ -27,13 +27,13 @@ services:
       [
         'mkdir -p $HOME/.geth-dev/keystore; echo ''$GETH_KEYSTORE_PASSWORD'' > $HOME/.geth-dev/password ;echo ''$GETH_KEYSTORE'' > $HOME/.geth-dev/keystore/$GETH_KEYSTORE_FILENAME; echo ''$GETH_GENESIS'' > $HOME/.geth-dev/genesis.json; geth --datadir $HOME/.geth-dev init $HOME/.geth-dev/genesis.json; geth --dev --nousb --ws --ws.addr "0.0.0.0" --ws.origins "*" --http --http.vhosts "*" --http.addr "0.0.0.0" --http.corsdomain "*" --miner.gasprice $GETH_GASPRICE --dev.period $GETH_BLOCK_TIME --rpc.allow-unprotected-txs --datadir $HOME/.geth-dev --password $HOME/.geth-dev/password',
       ]
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.ethereum.entrypoints=web"
-      - "traefik.http.routers.ethereum.rule=PathPrefix(`/rpc`)"
-      - "traefik.http.services.ethereum.loadbalancer.server.port=8545"
-      - "traefik.http.middlewares.strip-rpc.stripprefix.prefixes=/rpc"
-      - "traefik.http.routers.ethereum.middlewares=strip-rpc@docker"
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.ethereum.entrypoints=web"
+    #   - "traefik.http.routers.ethereum.rule=PathPrefix(`/rpc`)"
+    #   - "traefik.http.services.ethereum.loadbalancer.server.port=8545"
+    #   - "traefik.http.middlewares.strip-rpc.stripprefix.prefixes=/rpc"
+    #   - "traefik.http.routers.ethereum.middlewares=strip-rpc@docker"
     volumes:
       - geth-data:$HOME/.geth-dev
 
@@ -41,12 +41,12 @@ services:
     image: "containous/whoami"
     ports:
       - "9999:80"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.whoami.entrypoints=web"
-      - "traefik.http.routers.whoami.rule=PathPrefix(`/whoami`)"
-      - "traefik.http.middlewares.strip-whoami.stripprefix.prefixes=/whoami"
-      - "traefik.http.routers.whoami.middlewares=strip-whoami@docker"
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.whoami.entrypoints=web"
+    #   - "traefik.http.routers.whoami.rule=PathPrefix(`/whoami`)"
+    #   - "traefik.http.middlewares.strip-whoami.stripprefix.prefixes=/whoami"
+    #   - "traefik.http.routers.whoami.middlewares=strip-whoami@docker"
 
 # networks:
 #   default:
