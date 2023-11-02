@@ -33,7 +33,7 @@ services:
   ethereum:
     image: ethereum/client-go:v1.13.4
     entrypoint: ['sh', '-c']
-    depends:
+    depends_on:
       - ethereum-miner
     command:
       [
