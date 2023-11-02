@@ -19,13 +19,13 @@ services:
   #     - "/run/dbus/system_bus_socket:/run/dbus/system_bus_socket"
   
   ethereum:
-    image: ethereum/client-go:v1.11.6
+    image: ethereum/client-go:v1.13.4
     ports:
       - "8545:8545"
     entrypoint: ['sh', '-c']
     command:
       [
-        'mkdir -p $HOME/.geth-dev/keystore; echo ''$GETH_KEYSTORE_PASSWORD'' > $HOME/.geth-dev/password ;echo ''$GETH_KEYSTORE'' > $HOME/.geth-dev/keystore/$GETH_KEYSTORE_FILENAME; echo ''$GETH_GENESIS'' > $HOME/.geth-dev/genesis.json; geth --datadir $HOME/.geth-dev init $HOME/.geth-dev/genesis.json; geth --dev --nousb --ws --ws.addr "0.0.0.0" --ws.origins "*" --http --http.vhosts "*" --http.addr "0.0.0.0" --http.corsdomain "*" --miner.gasprice $GETH_GASPRICE --dev.period $GETH_BLOCK_TIME --rpc.allow-unprotected-txs --datadir $HOME/.geth-dev --password $HOME/.geth-dev/password',
+        'mkdir -p $HOME/.geth-dev/keystore; echo ''$GETH_KEYSTORE_PASSWORD'' > $HOME/.geth-dev/password ;echo ''$GETH_KEYSTORE'' > $HOME/.geth-dev/keystore/$GETH_KEYSTORE_FILENAME; echo ''$GETH_GENESIS'' > $HOME/.geth-dev/genesis.json; geth --datadir $HOME/.geth-dev init $HOME/.geth-dev/genesis.json; geth --nousb --ws --ws.addr "0.0.0.0" --ws.origins "*" --http --http.vhosts "*" --http.addr "0.0.0.0" --http.corsdomain "*" --miner.gasprice $GETH_GASPRICE --dev.period $GETH_BLOCK_TIME --rpc.allow-unprotected-txs --datadir $HOME/.geth-dev --password $HOME/.geth-dev/password',
       ]
     # labels:
     #   - "traefik.enable=true"
