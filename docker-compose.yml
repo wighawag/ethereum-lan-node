@@ -32,7 +32,7 @@ services:
     entrypoint: ['sh', '-c']
     command:
       [
-        'mkdir -p $HOME/.geth-rpc; echo ''$GETH_GENESIS'' > $HOME/.geth-rpc/genesis.json; geth --datadir $HOME/.geth-rpc init $HOME/.geth-rpc/genesis.json; geth --nousb --ws --ws.addr "0.0.0.0" --ws.origins "*" --http --http.vhosts "*" --http.addr "0.0.0.0" --http.corsdomain "*" --rpc.allow-unprotected-txs --datadir $HOME/.geth-rpc --bootnodes enode://af22c29c316ad069cf48a09a4ad5cf04a251b411e45098888d114c6dd7f489a13786620d5953738762afa13711d4ffb3b19aa5de772d8af72f851f7e9c5b164a@ethereum-bootnode:30305 --networkid 123454321',
+        'mkdir -p $HOME/.geth-rpc; echo ''$GETH_GENESIS'' > $HOME/.geth-rpc/genesis.json; geth --datadir $HOME/.geth-rpc init $HOME/.geth-rpc/genesis.json; geth --nousb --ws --ws.addr "0.0.0.0" --ws.origins "*" --http --http.vhosts "*" --http.addr "0.0.0.0" --http.corsdomain "*" --rpc.allow-unprotected-txs --datadir $HOME/.geth-rpc --bootnodes enode://af22c29c316ad069cf48a09a4ad5cf04a251b411e45098888d114c6dd7f489a13786620d5953738762afa13711d4ffb3b19aa5de772d8af72f851f7e9c5b164a@ethereum-bootnode:30305 --networkid 123454321 --http.api eth,web3,net,admin,db,debug,txpool',
       ]
     volumes:
       - geth-rpc:$HOME/.geth-rpc
