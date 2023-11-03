@@ -73,5 +73,5 @@ sudo crontab -e
 add line:
 
 ```
-@reboot /home/<username>/ethereum-lan-node/fix.sh
+* * * * * /usr/sbin/sysctl -w net.ipv4.ip_forward=1
 ```
