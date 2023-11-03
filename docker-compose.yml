@@ -2,56 +2,46 @@ version: '3.9'
 
 services:
 
-  # traefik:
-  #   image: "traefik:v2.1"
-  #   container_name: "traefik"
-  #   ports:
-  #     - "80:80"
-  #     - "8889:8080"
-  #   volumes:
-  #     - "/var/run/docker.sock:/var/run/docker.sock:ro"
-  #     - "./traefik.yml:/traefik.yml:ro"
-
-  # mdns:
-  #   image: hardillb/traefik-avahi-helper
-  #   volumes:
-  #     - "/var/run/docker.sock:/var/run/docker.sock:ro"
-  #     - "/run/dbus/system_bus_socket:/run/dbus/system_bus_socket"
+  ethereum-bootnode:
+    image: ethereum/client-go:alltools-v1.13.4
+    entrypoint: ['sh', '-c']
+    command:
+      [
+        'bootnode -nodekeyhex b0ac22adcad37213c7c565810a50f1772291e7b0ce53fb73e7ec2a3c75bc13b5 -addr :30305',
+      ]
+    
+  ethereum-miner:
+    depends_on: 
+      - ethereum-bootnode
+    image: ethereum/client-go:v1.13.4
+    entrypoint: ['sh', '-c']
+    command:
+      [
+        'mkdir -p $HOME/.geth-miner/keystore; echo ''$GETH_KEYSTORE_PASSWORD'' > $HOME/.geth-miner/password ;echo ''$GETH_KEYSTORE'' > $HOME/.geth-miner/keystore/$GETH_KEYSTORE_FILENAME; echo ''$GETH_GENESIS'' > $HOME/.geth-miner/genesis.json; geth --datadir $HOME/.geth-miner init $HOME/.geth-miner/genesis.json; geth --nousb --miner.gasprice $GETH_GASPRICE --datadir $HOME/.geth-miner --password $HOME/.geth-miner/password --mine --miner.etherbase $GETH_ETHERBASE --unlock $GETH_ETHERBASE --bootnodes enode://af22c29c316ad069cf48a09a4ad5cf04a251b411e45098888d114c6dd7f489a13786620d5953738762afa13711d4ffb3b19aa5de772d8af72f851f7e9c5b164a@ethereum-bootnode:30305 --networkid 123454321',
+      ]
+    volumes:
+      - geth-miner:$HOME/.geth-miner
   
-  ethereum:
+  ethereum-rpc:
+    depends_on: 
+      - ethereum-miner
+      - ethereum-bootnode
     image: ethereum/client-go:v1.13.4
     ports:
       - "8545:8545"
     entrypoint: ['sh', '-c']
     command:
       [
-        'mkdir -p $HOME/.geth-dev/keystore; echo ''$GETH_KEYSTORE_PASSWORD'' > $HOME/.geth-dev/password ;echo ''$GETH_KEYSTORE'' > $HOME/.geth-dev/keystore/$GETH_KEYSTORE_FILENAME; geth --dev --nousb --ws --ws.addr "0.0.0.0" --ws.origins "*" --http --http.vhosts "*" --http.addr "0.0.0.0" --http.corsdomain "*" --miner.gasprice $GETH_GASPRICE --dev.period $GETH_BLOCK_TIME --rpc.allow-unprotected-txs --datadir $HOME/.geth-dev --password $HOME/.geth-dev/password --http.api eth,web3,net,admin,db,debug,txpool',
+        'mkdir -p $HOME/.geth-rpc; echo ''$GETH_GENESIS'' > $HOME/.geth-rpc/genesis.json; geth --datadir $HOME/.geth-rpc init $HOME/.geth-rpc/genesis.json; geth --nousb --ws --ws.addr "0.0.0.0" --ws.origins "*" --http --http.vhosts "*" --http.addr "0.0.0.0" --http.corsdomain "*" --rpc.allow-unprotected-txs --datadir $HOME/.geth-rpc --bootnodes enode://af22c29c316ad069cf48a09a4ad5cf04a251b411e45098888d114c6dd7f489a13786620d5953738762afa13711d4ffb3b19aa5de772d8af72f851f7e9c5b164a@ethereum-bootnode:30305 --networkid 123454321',
       ]
-    # labels:
-    #   - "traefik.enable=true"
-    #   - "traefik.http.routers.ethereum.entrypoints=web"
-    #   - "traefik.http.routers.ethereum.rule=PathPrefix(`/rpc`)"
-    #   - "traefik.http.services.ethereum.loadbalancer.server.port=8545"
-    #   - "traefik.http.middlewares.strip-rpc.stripprefix.prefixes=/rpc"
-    #   - "traefik.http.routers.ethereum.middlewares=strip-rpc@docker"
     volumes:
-      - geth-data:$HOME/.geth-dev
+      - geth-rpc:$HOME/.geth-rpc
 
   whoami:
     image: "containous/whoami"
     ports:
       - "9999:80"
-    # labels:
-    #   - "traefik.enable=true"
-    #   - "traefik.http.routers.whoami.entrypoints=web"
-    #   - "traefik.http.routers.whoami.rule=PathPrefix(`/whoami`)"
-    #   - "traefik.http.middlewares.strip-whoami.stripprefix.prefixes=/whoami"
-    #   - "traefik.http.routers.whoami.middlewares=strip-whoami@docker"
-
-# networks:
-#   default:
-#     name: $TRAEFIK_DEFAULT_NETWORK
-#     external: true
-
+   
 volumes:
-  geth-data:
+  geth-miner:
+  geth-rpc:
