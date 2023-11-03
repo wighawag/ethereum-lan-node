@@ -9,9 +9,7 @@ services:
       [
         'bootnode -nodekeyhex b0ac22adcad37213c7c565810a50f1772291e7b0ce53fb73e7ec2a3c75bc13b5 -addr :30305',
       ]
-    networks:
-      - my-network
-    
+
   ethereum-miner:
     depends_on: 
       - ethereum-bootnode
@@ -23,10 +21,6 @@ services:
       ]
     volumes:
       - geth-miner:$HOME/.geth-miner
-    
-    networks:
-      - my-network
-
   
   ethereum-rpc:
     depends_on: 
@@ -43,9 +37,6 @@ services:
     volumes:
       - geth-rpc:$HOME/.geth-rpc
 
-    networks:
-      - my-network
-
   whoami:
     image: "containous/whoami"
     ports:
@@ -54,9 +45,3 @@ services:
 volumes:
   geth-miner:
   geth-rpc:
-
-
-networks:
-  my-network:
-    external: true
-
