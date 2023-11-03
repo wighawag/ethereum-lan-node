@@ -1,3 +1,8 @@
+#!/bin/bash
+MY_PATH="$(dirname -- "${BASH_SOURCE[0]}")"
+echo "cd $MY_PATH ..."
+cd $MY_PATH
+
 if [[ "$1" == "with-explorer" ]]
 then
 echo "currently not supported"
