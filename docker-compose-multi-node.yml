@@ -1,0 +1,47 @@
+version: '3.9'
+
+services:
+
+  ethereum-bootnode:
+    image: ethereum/client-go:alltools-v1.13.4
+    entrypoint: ['sh', '-c']
+    command:
+      [
+        'bootnode -nodekeyhex b0ac22adcad37213c7c565810a50f1772291e7b0ce53fb73e7ec2a3c75bc13b5 -addr :30305',
+      ]
+
+  ethereum-miner:
+    depends_on: 
+      - ethereum-bootnode
+    image: ethereum/client-go:v1.13.4
+    entrypoint: ['sh', '-c']
+    command:
+      [
+        'mkdir -p $HOME/.geth-miner/keystore; echo ''$GETH_KEYSTORE_PASSWORD'' > $HOME/.geth-miner/password ;echo ''$GETH_KEYSTORE'' > $HOME/.geth-miner/keystore/$GETH_KEYSTORE_FILENAME; echo ''$GETH_GENESIS'' > $HOME/.geth-miner/genesis.json; geth --datadir $HOME/.geth-miner init $HOME/.geth-miner/genesis.json; geth --nousb --miner.gasprice $GETH_GASPRICE --datadir $HOME/.geth-miner --password $HOME/.geth-miner/password --mine --miner.etherbase $GETH_ETHERBASE --unlock $GETH_ETHERBASE --bootnodes enode://af22c29c316ad069cf48a09a4ad5cf04a251b411e45098888d114c6dd7f489a13786620d5953738762afa13711d4ffb3b19aa5de772d8af72f851f7e9c5b164a@ethereum-bootnode:30305 --networkid 123454321',
+      ]
+    volumes:
+      - geth-miner:$HOME/.geth-miner
+  
+  ethereum-rpc:
+    depends_on: 
+      - ethereum-miner
+      - ethereum-bootnode
+    image: ethereum/client-go:v1.13.4
+    ports:
+      - "8545:8545"
+    entrypoint: ['sh', '-c']
+    command:
+      [
+        'mkdir -p $HOME/.geth-rpc; echo ''$GETH_GENESIS'' > $HOME/.geth-rpc/genesis.json; geth --datadir $HOME/.geth-rpc init $HOME/.geth-rpc/genesis.json; geth --nousb --ws --ws.addr "0.0.0.0" --ws.origins "*" --http --http.vhosts "*" --http.addr "0.0.0.0" --http.corsdomain "*" --rpc.allow-unprotected-txs --datadir $HOME/.geth-rpc --bootnodes enode://af22c29c316ad069cf48a09a4ad5cf04a251b411e45098888d114c6dd7f489a13786620d5953738762afa13711d4ffb3b19aa5de772d8af72f851f7e9c5b164a@ethereum-bootnode:30305 --networkid 123454321 --http.api eth,web3,net,admin,db,debug,txpool',
+      ]
+    volumes:
+      - geth-rpc:$HOME/.geth-rpc
+
+  whoami:
+    image: "containous/whoami"
+    ports:
+      - "9999:80"
+   
+volumes:
+  geth-miner:
+  geth-rpc:
