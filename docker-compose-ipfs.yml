@@ -1,0 +1,18 @@
+version: '3.9'
+
+services:
+  ipfs:
+    image: ipfs/kubo:master-2023-11-08-9655d92
+    volumes:
+      - ipfs-export:/export
+      - ipfs-data:/data/ipfs
+    environment:
+      IPFS_PROFILE: server
+    ports:
+      - "4001:4001"
+      - "8888:8080"
+      - "5001:5001"
+
+volumes:
+  ipfs-export:
+  ipfs-data:
