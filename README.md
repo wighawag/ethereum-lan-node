@@ -1,77 +1,48 @@
 # ethereum-lan-node
-A node for LAN network
 
+An ethereum node to run on local network, without dependence on the internet.
 
-# Raspberry PI
+It includes a blockchain explorer ([blockscout](https://www.blockscout.com/)) with contract verification and wallet connection
 
-We assume you have the networking configured. Personally my ideal setup is that of a dual Access Point + wifi client mode. Some doc to get that working on a pi zero 2 w can be found [here](docs/pi-zero-2w.md).
+We used to run this setup on a Raspberry Pi and we have [doc for that](docs/raspberrypi.md) but due to ipoor availability of ARM docker image for extra feature like blockchain explorer, we recommend using traditional x64 architecture.
 
-Else you can have a Access Point / Wifi Client Switcher following the doc [here](docs/ap-switch.md)
+We run it on Ubuntu 22.04 but should work anywhere.
 
-## We bundle AutoHotsport-Installer as submodule
+We also use it as a dual access point and connected wifi so it can make use of the internet if available
 
-```sh
-git clone --recurse-submodules git@github.com:wighawag/ethereum-lan-node.git
-cd ethereum-lan-node
-```
+## geth
 
-```sh
-sudo apt install hostapd dnsmasq
-sudo raspi-config # set up localization wifi country (GB for UK)
-tar -xvJf AutoHotspot-Installer/AutoHotspot-Setup.tar.xz
-cd Autohotspot
-sudo ./autohotspot-setup.sh # option 1 + option 7 
-sudo reboot
-# to force AP mode: sudo ./autohotspot-setup.sh # option 6
-```
+We run geth in dev mode.
 
-## Intalling docker
+the docker-compose.yml is already setup with the `test test test test test test test test test test test jumk` accounts
 
-```bash
-curl -sSL https://get.docker.com | sh
-sudo usermod -aG docker $USER
-```
+Feel free to modifiy to have other accounts
 
-You ll need to login and out to have the docker group assigned, then you can test the installation:
-
-```bash
-docker ps
-```
-
-To execute
-
-```bash
-bash start.sh
-```
-
-# At boot
+you can run it via 
 
 ```
-sudo crontab -e
+docker compose up
 ```
 
-add line:
+## blockscout
+
+we use blockscout as the blockchain explorer
+
+We include it as a submodule
+
+
+to run it, you have to have geth running first
 
 ```
-@reboot su <username> -c /home/<username>/ethereum-lan-node/start.sh
+cd blockscout/docker-compose
+docker compose -f geth.yml up
 ```
 
-# NOTE
 
-this was needed at some point to make sure docker get bound to 0.0.0.0
-
-```bash
-sysctl -w net.ipv4.ip_forward=1
-```
-
-you might want to also add this to crontab
+## have it run on boot
 
 ```
-sudo crontab -e
+sudo ./install.sh
 ```
 
-add line:
-
-```
-* * * * * /usr/sbin/sysctl -w net.ipv4.ip_forward=1
-```
+this will copy the files in the [install folder](./install). This assumes you are using systemd.
