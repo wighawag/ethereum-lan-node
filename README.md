@@ -1,4 +1,4 @@
-# ethereum-lan-node
+# The LAN chain
 
 An ethereum node to run on local network, without dependence on the internet.
 
