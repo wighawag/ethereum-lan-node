@@ -1,0 +1,16 @@
+[Unit]
+Description=Ethereum Block Explorer
+Requires=lan-ethereum.service
+After=lan-ethereum.service
+StartLimitIntervalSec=60
+
+[Service]
+WorkingDirectory=/home/wighawag/dev/github.com/wighawag/ethereum-lan-node/blockscout/docker-compose/
+ExecStart=/usr/bin/docker compose -f geth.yml up
+ExecStop=/usr/bin/docker compose down
+TimeoutStartSec=0
+Restart=on-failure
+StartLimitBurst=3
+
+[Install]
+WantedBy=multi-user.target
