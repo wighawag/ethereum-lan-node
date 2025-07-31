@@ -1,11 +1,11 @@
 {
     "name": "fuzd-service",
     "dependencies": {
-        "fuzd-cf-worker": "^0.0.18",
+        "fuzd-cf-worker": "^0.10.0",
         "node-cron": "^3.0.2",
-        "set-defaults": "^0.0.1",
+        "set-defaults": "^0.0.5",
         "toml": "^3.0.0",
-        "wait-on": "^7.0.1",
+        "wait-on": "^8.0.2",
         "wrangler": "^3.9.0"
         
     },
