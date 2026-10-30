@@ -1,6 +1,6 @@
 [submodule "AutoHotspot-Installer"]
-	path = AutoHotspot-Installer
+	path = legacy/AutoHotspot-Installer
 	url = git@github.com:wighawag/AutoHotspot-Installer.git
 [submodule "blockscout"]
-	path = blockscout
+	path = legacy/blockscout
 	url = git@github.com:wighawag/blockscout.git

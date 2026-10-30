@@ -1,0 +1,19 @@
+:root { color-scheme: light dark; --accent: #6c5ce7; }
+body { font-family: system-ui, sans-serif; margin: 0 auto; max-width: 60rem; padding: 1rem; line-height: 1.4; }
+header h1 { margin-bottom: 0.2rem; }
+header p { margin-top: 0; opacity: 0.8; word-break: break-all; }
+button { font-size: 1rem; padding: 0.5rem 1rem; border-radius: 0.5rem; border: 1px solid var(--accent); background: transparent; color: inherit; }
+ul { padding: 0; list-style: none; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: 0.8rem; }
+.card { display: block; padding: 1rem; border: 1px solid #8884; border-radius: 0.8rem; text-decoration: none; color: inherit; margin: 0; }
+a.card:hover { border-color: var(--accent); }
+.card strong { display: block; font-size: 1.2rem; }
+.card span { opacity: 0.8; }
+figure.card img { width: 100%; background: white; border-radius: 0.4rem; }
+figcaption { font-size: 0.9rem; word-break: break-all; margin-top: 0.4rem; }
+.list li { display: flex; justify-content: space-between; padding: 0.4rem 0; border-bottom: 1px solid #8882; }
+.state { font-size: 0.8rem; padding: 0 0.5rem; border-radius: 1rem; }
+.state.active { background: #2ecc7133; }
+.state.failed { background: #e74c3c33; }
+.state.activating, .state.unknown, .state.inactive { background: #f1c40f33; }
+footer { opacity: 0.6; font-size: 0.8rem; margin-top: 2rem; }

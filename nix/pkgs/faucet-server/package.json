@@ -1,0 +1,9 @@
+{
+  "name": "ethereum-lan-node-faucet",
+  "version": "0.2.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "dependencies": {
+    "faucet-server": "0.2.0"
+  }
+}
