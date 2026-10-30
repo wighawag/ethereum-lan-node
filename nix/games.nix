@@ -13,6 +13,7 @@
 #
 #   passthru.lan = {
 #     title = "Conquest";            description = "...";
+#     fallback = "/404.html";        # SPA shell, default /index.html
 #     server = { bin = "conquest-demo-server"; port = 30042; args = [...]; };
 #     deploy = { bin = "bomber-world-deploy"; };
 #   };
@@ -67,6 +68,11 @@
       webPort = lib.mkOption {
         type = lib.types.port;
         description = "The port its static site is served on.";
+      };
+      fallback = lib.mkOption {
+        type = lib.types.str;
+        default = lan.fallback or "/index.html";
+        description = "The page served for a path that is not a file (an SPA shell; SvelteKit's static adapter calls it 404.html or 200.html).";
       };
       server = {
         enable = lib.mkOption {
@@ -236,7 +242,7 @@ in {
         extraConfig = lib.concatStrings (lib.mapAttrsToList (n: g: ''
             :${toString g.webPort} {
               root * ${g.package}/web
-              try_files {path} {path}/index.html {path}.html /index.html
+              try_files {path} {path}/index.html {path}.html ${g.fallback}
               file_server
             }
           '')

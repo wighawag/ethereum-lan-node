@@ -56,7 +56,7 @@ A game is a package its own repo builds, with this shape:
 $out/web/              static site, built with same-host URLs ("//:8545", "//:34010")
 $out/bin/<server>      optional long-running service
 $out/bin/<deploy>      optional, deploys its contracts (idempotently)
-passthru.lan = { title; description; server = { bin; port; args; }; deploy.bin; };
+passthru.lan = { title; description; fallback; server = { bin; port; args; }; deploy.bin; };
 ```
 
 and the host enables it on a port:
