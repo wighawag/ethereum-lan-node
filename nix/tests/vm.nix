@@ -79,6 +79,10 @@ pkgs.testers.runNixOSTest {
         box.succeed(f"curl -sf -X POST -H 'content-type: application/json' -d '{{\"token\":\"none\",\"chainId\":\"19216801\",\"address\":\"{fresh}\"}}' http://127.0.0.1:34010/api/claim")
         box.wait_until_succeeds(f"[ \"$(cast balance --rpc-url http://127.0.0.1:8545 {fresh})\" != 0 ]", timeout=30)
 
+    with subtest("a game's page, on another port, may call the faucet's API"):
+        preflight = box.succeed("curl -si -X OPTIONS -H 'Origin: http://10.42.0.1:8001' -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: content-type' http://127.0.0.1:34010/api/claim")
+        assert "access-control-allow-origin: http://10.42.0.1:8001" in preflight.lower(), preflight
+
     with subtest("the landing page lists the game and reports the units"):
         box.wait_for_open_port(80)
         cfg = json.loads(box.succeed("curl -sf http://127.0.0.1/config.json"))

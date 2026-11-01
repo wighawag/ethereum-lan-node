@@ -40,6 +40,18 @@ in {
       default = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
       description = "The key the faucet pays from. PUBLIC by default (the genesis funds the test mnemonic).";
     };
+    corsOrigins = lib.mkOption {
+      type = lib.types.str;
+      # Every game is served on a port of its own, so a game's page is ANOTHER
+      # origin than the faucet, and faucet-server lets a page call its API only
+      # from the origins in CORS_ORIGINS (its default list names none of the
+      # box's). Without this a game's "Get ETH" (the template-commit-reveal
+      # framework's faucet API call) fails in the browser with "Failed to
+      # fetch", while a claim from its own page still works: found by
+      # stratagems' LAN rehearsal (its plan, step L2).
+      default = "*";
+      description = "Origins whose pages may call the faucet's API (comma-separated, or `*`).";
+    };
   };
 
   config = lib.mkIf (top.enable && cfg.enable) {
@@ -54,6 +66,7 @@ in {
         FAUCET_PRIVATE_KEY = cfg.privateKey;
         "CHAIN_${toString top.chain.chainId}" = "${cfg.amount}:${top.chain.rpcUrl}";
         DB = "${stateDir}/faucet.db";
+        CORS_ORIGINS = cfg.corsOrigins;
       };
       serviceConfig = {
         User = "ethereum-lan-node";

@@ -189,7 +189,7 @@ All under `services.ethereumLanNode`:
 | `openFirewall` | true | open every service port on every interface |
 | `chain.{enable,package,genesis,blockTime,httpPort,wsPort,mnemonic}` | on, go-ethereum, `nix/genesis.json`, 2, 8545, 8546, test junk | `chain.chainId` and `chain.rpcUrl` are read-only, derived |
 | `explorer.{enable,port,solc}` | on, 4000, 0.8.24 + 0.8.28 | `solc` entries are soliditylang's `list.json` entries |
-| `faucet.{enable,package,port,amount,privateKey}` | on, faucet-server, 34010, 1 ETH, account 0 | |
+| `faucet.{enable,package,port,amount,privateKey,corsOrigins}` | on, faucet-server, 34010, 1 ETH, account 0, `*` | `corsOrigins` lets a game page (another port, so another origin) call the faucet API |
 | `network.networkmanager` | true | NetworkManager manages the uplinks |
 | `network.shareInternet` | true | NAT hotspot clients out of any uplink |
 | `network.ap.{enable,interface,ssid,passphrase,passphraseFile,countryCode,band,channel,htCapabilities,address,blockPrivateNetworks}` | off, -, `master node`, `I am vitalik`, null, `GB`, `5g`, 36 (6 on 2g), HT40 + short GI, `10.42.0.1`, true | |
