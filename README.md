@@ -121,6 +121,32 @@ Things worth knowing when packaging:
 - **Deploy deterministically** (CREATE2 through the predeployed proxy): then the addresses the web build embeds are right on every box and after every reset, and the build can even run its deploy against a throwaway chain from the same genesis to get them.
 - **Pin anything a build derives from git**: there is no `.git` in the Nix sandbox. A SvelteKit config that falls back to a timestamp computes a different one in each build process, and the prerendered HTML then names a different build than its JS, so the page renders and never hydrates.
 
+### A game from the template tree
+
+A game built on wighawag's template tree (jolly-roger and its descendants: hardhat + rocketh in `contracts/`, SvelteKit in `web/`) does not write any of the above: `lib.mkRockethGame` builds the whole package, and the game's flake carries only the call and its own values.
+
+```nix
+inputs.ethereum-lan-node = {
+  url = "github:wighawag/ethereum-lan-node";
+  inputs.nixpkgs.follows = "nixpkgs";
+};
+# in outputs:
+packages.x86_64-linux.lan = ethereum-lan-node.lib.mkRockethGame pkgs ({
+  src = self;
+  rev = self.shortRev or self.dirtyShortRev or "unknown";
+} // import ./nix/game.nix);
+```
+
+`nix/game.nix` holds the pnpm dependencies' hash (`pnpmDepsHash`, required) and optionally `name`, `title`, `description`, `deployBin`, `solc` and `preBuild`: [`nix/rocketh-game/default.nix`](nix/rocketh-game/default.nix) documents each.
+
+The build has no network. It compiles with the official solc WASM build, deploys into a throwaway chain with the box's chain id to learn the addresses, exports them to the web app with the box's chain described, and builds the web app with same-host urls ([`nix/rocketh-game/env.lan`](nix/rocketh-game/env.lan), unless the game has its own `web/.env.lan`). The deploy command it ships replays the recorded transactions on the box with `cast`, skipping what is already there, so the box can run it on every boot.
+
+What the game's repo must still carry, since nothing outside it can supply it:
+
+- `path: process.env.SOLC_PATH || undefined` on each solc profile in `contracts/hardhat.config.ts`;
+- `withGuardRecording(extensions)` in `contracts/rocketh/deploy.ts` (with `contracts/rocketh/guard-recording.ts`), so a guarded setup call reports its guard to the build;
+- deploy scripts that deploy with `deterministic: true` and send every other transaction as an `execute` with a `guard`. The build refuses anything else and names the transaction, because a box replaying it on every boot would repeat it.
+
 ### Adding, updating, removing
 
 ```nix
@@ -219,6 +245,7 @@ nix/games.nix             games, landing page, status feed
 nix/landing/              the landing page (plain HTML/JS, no CDN)
 nix/genesis.json          the chain's genesis
 nix/pkgs/                 faucet-server and the example game
+nix/rocketh-game/         lib.mkRockethGame: a template-tree game's package
 nix/tests/vm.nix          the VM test
 examples/host.nix         a minimal host to start from
 legacy/                   the old docker compose setup

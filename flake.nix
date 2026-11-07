@@ -18,6 +18,18 @@
     nixosModules.default = import ./nix/module.nix;
     nixosModules.ethereumLanNode = self.nixosModules.default;
 
+    # A game from wighawag's template tree (jolly-roger and everything built on
+    # it), packaged for the box: `lan = ethereum-lan-node.lib.mkRockethGame pkgs
+    # ({src = self; rev = ...;} // import ./nix/game.nix);` in the game's own
+    # flake. Takes the game's `pkgs`, so it builds with the game's nixpkgs. See
+    # nix/rocketh-game/default.nix for the arguments and what the repo must
+    # carry, and "A game from the template tree" in README.md.
+    #
+    # `solc` defaults to null HERE, not only in the function: callPackage fills
+    # any argument nixpkgs has an attribute for, and nixpkgs has a native `solc`
+    # (not the WASM build `solc` describes), so an unset one would get that.
+    lib.mkRockethGame = pkgs: args: pkgs.callPackage ./nix/rocketh-game ({solc = null;} // args);
+
     packages.${system} = {
       faucet-server = pkgs.callPackage ./nix/pkgs/faucet-server {};
       # A stand-in game: a static page plus a tiny HTTP server, in the exact
