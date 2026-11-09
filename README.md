@@ -131,13 +131,21 @@ inputs.ethereum-lan-node = {
   inputs.nixpkgs.follows = "nixpkgs";
 };
 # in outputs:
-packages.x86_64-linux.lan = ethereum-lan-node.lib.mkRockethGame pkgs ({
+packages.x86_64-linux.lan = ethereum-lan-node.lib.mkRockethGame pkgs {
   src = self;
   rev = self.shortRev or self.dirtyShortRev or "unknown";
-} // import ./nix/game.nix);
+};
 ```
 
-`nix/game.nix` holds the pnpm dependencies' hash (`pnpmDepsHash`, required) and optionally `name`, `title`, `description`, `deployBin`, `solc` and `preBuild`: [`nix/rocketh-game/default.nix`](nix/rocketh-game/default.nix) documents each.
+The game's own values are plain data, in a `"lan"` field of its root `package.json`: the pnpm dependencies' hash (`pnpmDepsHash`, required) and optionally `name`, `title`, `description`, `deployBin`, `solc` and `preBuild`, which [`nix/rocketh-game/default.nix`](nix/rocketh-game/default.nix) documents. So the flake above is the same in every game, and an argument passed to the function wins over the field.
+
+```json
+"lan": {
+  "pnpmDepsHash": "sha256-...",
+  "preBuild": "pnpm --filter ./circuits exec tsc",
+  "deployBin": "duel-deploy"
+}
+```
 
 The build has no network. It compiles with the official solc WASM build, deploys into a throwaway chain with the box's chain id to learn the addresses, exports them to the web app with the box's chain described, and builds the web app with same-host urls ([`nix/rocketh-game/env.lan`](nix/rocketh-game/env.lan), unless the game has its own `web/.env.lan`). The deploy command it ships replays the recorded transactions on the box with `cast`, skipping what is already there, so the box can run it on every boot.
 

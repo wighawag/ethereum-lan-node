@@ -20,8 +20,10 @@
 
     # A game from wighawag's template tree (jolly-roger and everything built on
     # it), packaged for the box: `lan = ethereum-lan-node.lib.mkRockethGame pkgs
-    # ({src = self; rev = ...;} // import ./nix/game.nix);` in the game's own
-    # flake. Takes the game's `pkgs`, so it builds with the game's nixpkgs. See
+    # {src = self; rev = ...;};` in the game's own flake, which reads the game's
+    # own values from the `"lan"` field of its package.json. Takes the game's
+    # `pkgs`, so it builds with the game's nixpkgs (which the pnpm hash depends
+    # on). See
     # nix/rocketh-game/default.nix for the arguments and what the repo must
     # carry, and "A game from the template tree" in README.md.
     #

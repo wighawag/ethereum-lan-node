@@ -43,12 +43,24 @@
   # The repo, and the revision the web build is named after.
   src,
   rev ? "unknown",
-  # fetchPnpmDeps' hash of the packages the repo's pnpm-lock.yaml names. After
-  # any lockfile change, set it to sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
-  # and run `nix build git+file://$PWD#lan.pnpmDeps`, which fails with the right
-  # value. Do not rely on a build passing: Nix trusts a hash it has already
-  # seen, so a stale hash can quietly get another repo's packages.
-  pnpmDepsHash,
+  # THE GAME'S OWN VALUES. Each is read from the `"lan"` field of the repo's
+  # root package.json, so a game carries them as plain data and no Nix:
+  #
+  #   "lan": {
+  #     "pnpmDepsHash": "sha256-...",
+  #     "preBuild": "pnpm --filter ./circuits exec tsc",
+  #     "deployBin": "duel-deploy"
+  #   }
+  #
+  # An argument given here wins over the field (a host may override one).
+  #
+  # pnpmDepsHash (REQUIRED): fetchPnpmDeps' hash of the packages the repo's
+  # pnpm-lock.yaml names. After any lockfile change, set it to
+  # sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA= and run
+  # `nix build git+file://$PWD#lan.pnpmDeps`, which fails with the right value.
+  # Do not rely on a build passing: Nix trusts a hash it has already seen, so a
+  # stale hash can quietly get another repo's packages.
+  pnpmDepsHash ? null,
   # Default: the root package.json's "name"; the package is "<name>-lan".
   name ? null,
   # Defaults: web/src/web-config.json's "title" and "description".
@@ -57,13 +69,13 @@
   # What the box runs to deploy. Default: "<name>-deploy".
   deployBin ? null,
   # The solc WASM build, which must be the version contracts/hardhat.config.ts
-  # compiles with: { version = "0.8.28+commit.7893614a"; hash = "sha256-..."; }
+  # compiles with: {"version": "0.8.28+commit.7893614a", "hash": "sha256-..."}
   # (the hash is the sha256 in https://binaries.soliditylang.org/wasm/list.json,
   # as an SRI hash: nix hash convert --to sri sha256:<hex>). Default: 0.8.28.
   solc ? null,
   # Shell, run from the repo root before the contracts are compiled (what they
-  # or the web app need built first).
-  preBuild ? "",
+  # or the web app need built first). Default: nothing.
+  preBuild ? null,
   lib,
   stdenv,
   fetchurl,
@@ -79,13 +91,36 @@
   pnpm = pnpm_10;
   webConfig = lib.importJSON "${src}/web/src/web-config.json";
   packageJson = lib.importJSON "${src}/package.json";
+  # The argument when given, else the package.json "lan" field's, else null.
+  fromRepo = packageJson.lan or {};
+  value = arg: field:
+    if arg != null
+    then arg
+    else fromRepo.${field} or null;
+  hash' =
+    if value pnpmDepsHash "pnpmDepsHash" != null
+    then value pnpmDepsHash "pnpmDepsHash"
+    else
+      throw (
+        "${packageJson.name}: no pnpmDepsHash. Add \"lan\": {\"pnpmDepsHash\": \"sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=\"} "
+        + "to package.json and run `nix build git+file://$PWD#lan.pnpmDeps`, which fails with the right value."
+      );
+  name' = value name "name";
+  title' = value title "title";
+  description' = value description "description";
+  deployBin' = value deployBin "deployBin";
+  solc' = value solc "solc";
+  preBuild' =
+    if value preBuild "preBuild" != null
+    then value preBuild "preBuild"
+    else "";
   pname =
-    if name != null
-    then name
+    if name' != null
+    then name'
     else packageJson.name;
   deployCommand =
-    if deployBin != null
-    then deployBin
+    if deployBin' != null
+    then deployBin'
     else "${pname}-deploy";
 
   # The official WASM build of solc (https://binaries.soliditylang.org/wasm/list.json,
@@ -93,10 +128,10 @@
   # would download, with nothing to patch. (The native build wants /lib64's
   # loader, and once patched, hardhat's binary-or-wasm sniffing takes it for
   # text.) The version must be the one in contracts/hardhat.config.ts: a repo
-  # that compiles with another one passes `solc`.
+  # that compiles with another one says so with `solc`.
   solcBuild =
-    if solc != null
-    then solc
+    if solc' != null
+    then solc'
     else {
       version = "0.8.28+commit.7893614a";
       hash = "sha256-cu9YCm7FlDEwAo5SlDE/JOlDVSCsyJ+Mnb/QE52a4UY=";
@@ -133,7 +168,7 @@ in
       inherit (finalAttrs) pname version src;
       inherit pnpm;
       fetcherVersion = 3;
-      hash = pnpmDepsHash;
+      hash = hash';
     };
 
     env = {
@@ -145,7 +180,7 @@ in
       npm_config_manage_package_manager_versions = "false";
     };
 
-    inherit preBuild;
+    preBuild = preBuild';
 
     buildPhase = ''
       export HOME=$TMPDIR
@@ -205,12 +240,12 @@ in
 
     passthru.lan = {
       title =
-        if title != null
-        then title
+        if title' != null
+        then title'
         else webConfig.title;
       description =
-        if description != null
-        then description
+        if description' != null
+        then description'
         else webConfig.description;
       # SvelteKit's SPA shell for routes that were not prerendered.
       fallback = "/404.html";
