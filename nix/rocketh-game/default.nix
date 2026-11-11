@@ -82,6 +82,14 @@
   # second export of the same records, workspaces built from them). Default:
   # nothing.
   preWebBuild ? null,
+  # A file holding the hash of the box's block 0 (the flake's `genesis-hash`,
+  # which lib.mkRockethGame passes). The build's throwaway chain has a genesis
+  # of its own, different at every build, and the app keys what it stores by
+  # this hash while an indexer refuses a node whose block 0 is not the one its
+  # records name ("this provider is serving a different chain"), so the
+  # records are given the box's (./build/deploy.ts), and the deploy command
+  # checks the box's chain against it. Null: the records keep the build's.
+  genesisHash ? null,
   lib,
   stdenv,
   fetchurl,
@@ -195,6 +203,7 @@ in
 
     buildPhase = ''
       export HOME=$TMPDIR
+      ${lib.optionalString (genesisHash != null) "export LAN_GENESIS_HASH=$(cat ${genesisHash})"}
       # The same setting for a pnpm that a package.json script runs (`"build":
       # "... && pnpm build:bundle"`): `pnpm run` hands its scripts this
       # variable EMPTY, which reads as the default (true), so the inner pnpm

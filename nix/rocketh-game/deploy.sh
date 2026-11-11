@@ -26,6 +26,14 @@ if [ "$chain" != "$expected" ]; then
 	echo "$name: the chain is $chain, the web app was built for $expected" >&2
 	exit 1
 fi
+genesis=$(jq -r '.genesisHash // empty' "$TRANSACTIONS")
+if [ -n "$genesis" ]; then
+	block0=$(cast block --rpc-url "$ETH_NODE_URI" 0 --field hash)
+	if [ "$(tr '[:upper:]' '[:lower:]' <<<"$block0")" != "$(tr '[:upper:]' '[:lower:]' <<<"$genesis")" ]; then
+		echo "$name: the chain's block 0 is $block0, the web app was built for $genesis (another genesis than the box's?)" >&2
+		exit 1
+	fi
+fi
 if [ "$(cast code --rpc-url "$ETH_NODE_URI" "$factory")" = "0x" ]; then
 	echo "$name: no deterministic-deployment proxy at $factory" >&2
 	exit 1

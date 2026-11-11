@@ -30,7 +30,17 @@
     # `solc` defaults to null HERE, not only in the function: callPackage fills
     # any argument nixpkgs has an attribute for, and nixpkgs has a native `solc`
     # (not the WASM build `solc` describes), so an unset one would get that.
-    lib.mkRockethGame = pkgs: args: pkgs.callPackage ./nix/rocketh-game ({solc = null;} // args);
+    #
+    # `genesisHash` is the box's block 0, computed by this flake's geth (the
+    # game's nixpkgs' when its input follows it, as the README's does). The
+    # hash is the genesis', not geth's: 1.17.3 and 1.17.8 give the same one,
+    # and the deploy command checks it against the box's chain anyway.
+    lib.mkRockethGame = pkgs: args:
+      pkgs.callPackage ./nix/rocketh-game ({
+          solc = null;
+          genesisHash = self.packages.${system}.genesis-hash;
+        }
+        // args);
 
     packages.${system} = {
       faucet-server = pkgs.callPackage ./nix/pkgs/faucet-server {};
@@ -39,6 +49,19 @@
       # for checking a fresh box before any real game is added.
       example-game = pkgs.callPackage ./nix/pkgs/example-game {};
       genesis = pkgs.writeText "genesis.json" (builtins.readFile ./nix/genesis.json);
+      # The hash of the block 0 that `geth init` makes of that genesis, as the
+      # chain unit runs it (nix/chain.nix: `--state.scheme hash`), in a file:
+      # what a game's records must name for an indexer to accept the box's
+      # chain (nix/rocketh-game/build/deploy.ts), and what its deploy command
+      # checks the box's chain against.
+      genesis-hash = pkgs.runCommand "genesis-hash" {nativeBuildInputs = [pkgs.go-ethereum];} ''
+        d=$TMPDIR/geth
+        geth --datadir $d --state.scheme hash init ${./nix/genesis.json}
+        geth --datadir $d --nodiscover --maxpeers 0 --port 0 --authrpc.port 0 \
+          --ipcpath $d/geth.ipc --exec 'eth.getBlock(0).hash' console \
+          | tr -d '"\n' > $out
+        grep -qE '^0x[0-9a-f]{64}$' $out
+      '';
     };
 
     # A complete host anyone can birth (see examples/host.nix): this module,
