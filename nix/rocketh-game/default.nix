@@ -76,6 +76,12 @@
   # Shell, run from the repo root before the contracts are compiled (what they
   # or the web app need built first). Default: nothing.
   preBuild ? null,
+  # Shell, run from the repo root after the contracts are deployed and exported
+  # (web/src/lib/deployments.ts written, the contracts' dist/ built) and before
+  # the web app is built: what needs the addresses, other than the web app (a
+  # second export of the same records, workspaces built from them). Default:
+  # nothing.
+  preWebBuild ? null,
   lib,
   stdenv,
   fetchurl,
@@ -113,6 +119,10 @@
   preBuild' =
     if value preBuild "preBuild" != null
     then value preBuild "preBuild"
+    else "";
+  preWebBuild' =
+    if value preWebBuild "preWebBuild" != null
+    then value preWebBuild "preWebBuild"
     else "";
   pname =
     if name' != null
@@ -181,9 +191,16 @@ in
     };
 
     preBuild = preBuild';
+    preWebBuild = preWebBuild';
 
     buildPhase = ''
       export HOME=$TMPDIR
+      # The same setting for a pnpm that a package.json script runs (`"build":
+      # "... && pnpm build:bundle"`): `pnpm run` hands its scripts this
+      # variable EMPTY, which reads as the default (true), so the inner pnpm
+      # tries to download the pinned version and fails with no network. A user
+      # .npmrc reaches every pnpm.
+      echo "manage-package-manager-versions=false" >> $HOME/.npmrc
       runHook preBuild
 
       # The same-host urls, unless the game has its own.
@@ -207,6 +224,8 @@ in
       # chain's offline demo runs the deploy scripts in the browser.
       pnpm exec tsc
       popd
+
+      runHook preWebBuild
 
       pushd web
       # svelte.config.js names the build after `git rev-parse`, falling back to a

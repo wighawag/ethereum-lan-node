@@ -137,7 +137,7 @@ packages.x86_64-linux.lan = ethereum-lan-node.lib.mkRockethGame pkgs {
 };
 ```
 
-The game's own values are plain data, in a `"lan"` field of its root `package.json`: the pnpm dependencies' hash (`pnpmDepsHash`, required) and optionally `name`, `title`, `description`, `deployBin`, `solc` and `preBuild`, which [`nix/rocketh-game/default.nix`](nix/rocketh-game/default.nix) documents. So the flake above is the same in every game, and an argument passed to the function wins over the field.
+The game's own values are plain data, in a `"lan"` field of its root `package.json`: the pnpm dependencies' hash (`pnpmDepsHash`, required) and optionally `name`, `title`, `description`, `deployBin`, `solc`, `preBuild` (shell run before the contracts compile) and `preWebBuild` (shell run once the addresses are exported, before the web app is built: what else needs them, such as a game's indexer), which [`nix/rocketh-game/default.nix`](nix/rocketh-game/default.nix) documents. So the flake above is the same in every game, and an argument passed to the function wins over the field.
 
 ```json
 "lan": {
