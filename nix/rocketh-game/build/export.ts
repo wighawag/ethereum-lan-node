@@ -17,7 +17,7 @@ chains[CHAIN_ID] = {
 		id: CHAIN_ID,
 		name: 'LAN',
 		nativeCurrency: {name: 'Ether', symbol: 'ETH', decimals: 18},
-		rpcUrls: {default: {http: ['http://ethereum.local:8545']}},
+		rpcUrls: {default: {http: ['http://ethereum.lan:8545']}},
 		testnet: true,
 	},
 };
