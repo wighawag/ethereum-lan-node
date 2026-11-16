@@ -86,6 +86,12 @@
         module = self.nixosModules.default;
         exampleGame = self.packages.${system}.example-game;
       };
+      # The Ethernet port: a direct cable, a switch with no router, a router
+      # appearing on that switch, and a box that must never serve.
+      wired = import ./nix/tests/wired.nix {
+        inherit pkgs lib;
+        module = self.nixosModules.default;
+      };
     };
 
     formatter.${system} = pkgs.alejandra;

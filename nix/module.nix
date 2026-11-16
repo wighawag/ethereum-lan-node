@@ -7,6 +7,7 @@
 #   explorer.nix  blockscout (pinned containers) + native postgres
 #   faucet.nix    faucet-server, funded by the test mnemonic's account 0
 #   network.nix   the Wi-Fi hotspot, the uplinks, internet sharing
+#   wired.nix     the Ethernet port: link-local and a fallback DHCP server
 #   games.nix     the games, the landing page and its status feed
 #
 # Everything a box remembers lives under `stateDir`, which is what makes
@@ -24,6 +25,7 @@ in {
     ./explorer.nix
     ./faucet.nix
     ./network.nix
+    ./wired.nix
     ./games.nix
   ];
 

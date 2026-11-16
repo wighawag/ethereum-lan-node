@@ -9,7 +9,9 @@
 #     printed QR card (join the Wi-Fi, open http://10.42.0.1) always works.
 #   - joined: NetworkManager brings up Ethernet (DHCP) and any known Wi-Fi in
 #     range on the OTHER radio. The box then also answers on whatever address
-#     that network gave it; the landing page shows it.
+#     that network gave it; the landing page shows it. A cable with no
+#     router at the other end is wired.nix's business (link-local, and a
+#     fallback DHCP server).
 #   - both: the hotspot keeps running beside an uplink, and hotspot clients
 #     get the internet through it (NAT), but NOT the uplink's private ranges
 #     or the tailnet (see `ap.blockPrivateNetworks`).
@@ -187,9 +189,18 @@ in {
           ];
           domain = "lan";
           local = "/lan/";
-          address = [
-            "/${config.networking.hostName}.lan/${ap.address}"
-            "/ethereum.lan/${ap.address}"
+          # The box's names. <hostname>.local too, over plain DNS: some Windows
+          # machines ask their DNS server for .local when mDNS is blocked (a
+          # network classed Public); phones and Macs ask mDNS only, where Avahi
+          # answers.
+          #
+          # host-record, NOT address=/name/ip: with `local=/lan/`, address=
+          # answered an AAAA query for ethereum.lan with NXDOMAIN ("no such
+          # name") instead of an empty answer, which a strict resolver may
+          # cache as the whole name not existing (measured in the VM test).
+          host-record = lib.unique [
+            "${config.networking.hostName}.lan,${config.networking.hostName}.local,${ap.address}"
+            "ethereum.lan,${ap.address}"
           ];
         };
       };

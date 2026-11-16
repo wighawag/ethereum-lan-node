@@ -76,9 +76,32 @@ nix run github:nix-community/nixos-anywhere -- --flake .#my-box --target-host ro
 
 ## Reaching the box
 
-- **On its own Wi-Fi**: SSID `master node`, passphrase `I am vitalik` (both options). The box is ALWAYS `http://10.42.0.1` there, so a printed card with the Wi-Fi QR (`http://10.42.0.1/qr/wifi.svg`) and that URL always works. Its DNS also answers `ethereum.lan` and `<hostname>.lan`.
+- **On its own Wi-Fi**: SSID `master node`, passphrase `I am vitalik` (both options). The box is ALWAYS `http://10.42.0.1` there, so a printed card with the Wi-Fi QR (`http://10.42.0.1/qr/wifi.svg`) and that URL always works. Its DNS also answers `ethereum.lan`, `<hostname>.lan` and `<hostname>.local` (the last for Windows machines that ask DNS when their mDNS is blocked).
 - **On a network it joined** (Ethernet by DHCP, or Wi-Fi on the other radio): it gets whatever address that network hands out, different at every venue. Devices that do mDNS (laptops, iPhones) reach `<hostname>.local` if you enable Avahi (the example host does); most Android phones cannot resolve `.local`, so give them the IP. The landing page lists every current address with a QR code: open it once from a laptop and show the QR.
+- **On a cable with no router** (straight into a laptop, or a switch of PCs): set `network.wired.interface` to the Ethernet port. The box then takes a 169.254 link-local address when nobody hands out addresses, which macOS and Windows reach by themselves, and with `network.wired.fallbackServer.enable` it becomes the DHCP server there, at `http://10.43.0.1`, so every PC gets an address. It serves only after probing the cable and hearing no other DHCP server, keeps probing while it serves, and steps aside within seconds when a router appears, handing its clients over to it. It offers no gateway and no DNS, so a laptop also on Wi-Fi keeps its internet. The reasoning and the safeguards: [ADR 0001](docs/adr/0001-the-cable-gets-a-dhcp-server-only-when-nobody-else-serves-one.md). Leave `fallbackServer` off for link-local only.
 - **Both at once** is the normal case: the hotspot keeps running beside an uplink, and hotspot clients get the internet through it when there is some, but never the uplink's private ranges (the venue LAN, its router, a tailnet).
+
+### Windows and `<hostname>.local`
+
+Windows 10 (1803 and later) and Windows 11 resolve `.local` names by mDNS, but often fail where a Mac or a Linux laptop succeeds. The usual cause is the **network profile**: a network Windows does not recognise (a cable straight into the box, a switch with no router, an unfamiliar venue) is classed as **Public**, and on a Public network Windows Firewall typically drops the incoming mDNS answers. Some VPN clients and endpoint-security tools also turn mDNS off.
+
+To check, in PowerShell on the Windows machine while it is connected to the box:
+
+```
+Get-NetConnectionProfile                 # the box's network: NetworkCategory Public or Private?
+Resolve-DnsName ethereum.local           # does .local resolve at all?
+Resolve-DnsName ethereum.local -Type A   # IPv4 only, if the first answer was an IPv6 fe80:: address
+```
+
+- `Public` and the name fails: make that network Private (Settings, Network & internet, the connection, Network profile type: Private; or as admin `Set-NetConnectionProfile -InterfaceAlias "<name from the first command>" -NetworkCategory Private`), then try again. Only do this on a network you trust; at a venue, prefer the addresses below.
+- `Private` and the name still fails: mDNS is off or blocked on that machine (a VPN, security software, a group policy). Use the addresses below.
+- The name resolves but the browser does not load: try `http://<the IPv4 address>` to rule out the browser, then check the landing page's address list.
+
+Names and addresses that work on Windows without mDNS:
+
+- on the hotspot: `http://ethereum.lan` (the box's own DNS answers it) or `http://10.42.0.1`. The box's DNS answers `<hostname>.local` there too, which rescues a Windows machine that falls back to DNS for `.local`;
+- on a cable or a switch with no router, with the fallback server: `http://10.43.0.1`;
+- on a venue network: the address the landing page lists (open it once from any device that resolves `.local`, and scan its QR code).
 
 Everything is served over plain `http://<ip>`, which browsers do not treat as a secure context: no `crypto.subtle`, no `crypto.randomUUID`, no service worker. Games must work without them. Every URL a page uses should be same-host (`//:8545` meaning "the host this page came from, port 8545"), never `localhost` (which on a phone is the phone) and never a fixed IP.
 
@@ -205,7 +228,7 @@ The box itself needs no internet. Changing it at the event does, unless you prep
   ssh <user>@10.42.0.1 sudo nmcli connection delete "<venue SSID>"   # afterwards
   ```
 
-  Ethernet needs nothing: plug it in.
+  Ethernet needs nothing: plug it in. To see which DHCP servers answer on the cable (other than the box's own): `sudo ethereum-lan-node-dhcp-probe`; whether the box is serving: `journalctl -u ethereum-lan-node-wired`.
 - **See what runs**: the landing page, or `systemctl --failed` and `journalctl -b -u <unit>` on the box. The units: `ethereum-lan-node-chain`, `ethereum-lan-node-faucet`, `ethereum-lan-node-game-<name>`, `ethereum-lan-node-deploy-<name>`, `podman-blockscout-{backend,frontend,verifier}`, `postgresql`, `caddy`, `hostapd`, `dnsmasq`, `ethereum-lan-node-status` (the landing page's feed, every 10 s).
 - **Something broke after a deploy**: `sudo nixos-rebuild switch --rollback` on the box.
 - **Old phones cannot see the hotspot**: `network.ap.band = "2g";` (channel 6), deploy.
@@ -226,6 +249,8 @@ All under `services.ethereumLanNode`:
 | `faucet.{enable,package,port,amount,privateKey,corsOrigins}` | on, faucet-server, 34010, 1 ETH, account 0, `*` | `corsOrigins` lets a game page (another port, so another origin) call the faucet API |
 | `network.networkmanager` | true | NetworkManager manages the uplinks |
 | `network.shareInternet` | true | NAT hotspot clients out of any uplink |
+| `network.wired.{interface,linkLocalFallback}` | null, true | the Ethernet port; when set, DHCP with a 169.254 fallback |
+| `network.wired.fallbackServer.{enable,address,leaseTime,clientWait,probeInterval,probeWindow}` | off, `10.43.0.1`, 120, 30, 30, 6 | be the DHCP server on a cable that has none (ADR 0001) |
 | `network.ap.{enable,interface,ssid,passphrase,passphraseFile,countryCode,band,channel,htCapabilities,address,blockPrivateNetworks}` | off, -, `master node`, `I am vitalik`, null, `GB`, `5g`, 36 (6 on 2g), HT40 + short GI, `10.42.0.1`, true | |
 | `games.<name>.{package,webPort,title,description,fallback,server.*,deploy.*}` | | the rest default from `package.passthru.lan` |
 | `landing.{enable,port}` | on, 80 | |
@@ -234,11 +259,12 @@ All under `services.ethereumLanNode`:
 
 ```
 nix build .#checks.x86_64-linux.vm -L
+nix build .#checks.x86_64-linux.wired -L
 ```
 
-boots the whole box in a VM with no internet, with two simulated radios: it checks the chain, the faucet, the explorer (including that it answers on whatever host it is reached by), a deterministic game deploy, a phone joining the hotspot with WPA2 and getting a DHCP lease, and the reset.
+boots the whole box in a VM with no internet, with two simulated radios: it checks the chain, the faucet, the explorer (including that it answers on whatever host it is reached by), a deterministic game deploy, a phone joining the hotspot with WPA2 and getting a DHCP lease, and the reset. `wired` covers the Ethernet port: a link-local laptop reaching a box without the fallback server, a PC on a switch getting its address from the box, a router joining that switch (the box steps aside, the PC moves and keeps reaching the box by name), and a box booting onto a network with a router (it never serves).
 
-Not covered yet: a deploy from a fully offline laptop, and `<hostname>.local` from a phone on the hotspot.
+Not covered yet: a deploy from a fully offline laptop, `<hostname>.local` from a phone on the hotspot, and a pulled Ethernet cable (the fallback server stops on lost carrier; the test never unplugs).
 
 ## Layout
 
@@ -249,12 +275,16 @@ nix/chain.nix             geth dev chain
 nix/explorer.nix          blockscout + postgres + offline solc
 nix/faucet.nix            the faucet
 nix/network.nix           hotspot, uplinks, NAT
+nix/wired.nix             the Ethernet port: link-local, the fallback DHCP server
+nix/pkgs/wired-fallback/  the fallback server's watcher (probe, dnsmasq, hand-over)
 nix/games.nix             games, landing page, status feed
 nix/landing/              the landing page (plain HTML/JS, no CDN)
 nix/genesis.json          the chain's genesis
 nix/pkgs/                 faucet-server and the example game
 nix/rocketh-game/         lib.mkRockethGame: a template-tree game's package
 nix/tests/vm.nix          the VM test
+nix/tests/wired.nix       the Ethernet port's VM test
+docs/adr/                 decisions and why
 examples/host.nix         a minimal host to start from
 legacy/                   the old docker compose setup
 ```

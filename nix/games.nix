@@ -167,7 +167,7 @@
       set +e
       out=${runDir}
       mkdir -p "$out/qr.new"
-      addrs=$(ip -j -4 addr show scope global | jq -c '[.[] | select(.ifname != "tailscale0") | {ifname, addr: .addr_info[0].local}]')
+      addrs=$(ip -j -4 addr show scope global | jq -c '[.[] | select(.ifname != "tailscale0") | .ifname as $i | .addr_info[] | {ifname: $i, addr: .local}]')
       for a in $(echo "$addrs" | jq -r '.[].addr'); do
         qrencode -t SVG -m 1 -o "$out/qr.new/$a.svg" "http://$a/"
       done

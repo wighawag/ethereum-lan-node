@@ -114,6 +114,13 @@ pkgs.testers.runNixOSTest {
         box.succeed("ip netns exec phone busybox udhcpc -i wlan1 -n -q -t 10 -s /tmp/udhcpc.sh")
         box.succeed("ip netns exec phone ip -4 addr show wlan1 | grep -q 'inet 10.42.0.'")
         box.succeed("ip netns exec phone curl -sf http://10.42.0.1/config.json | jq -e '.hotspot.ssid == \"master node\"'")
+        # The hotspot's DNS answers the box's names, .local included (for
+        # Windows machines whose mDNS is blocked). The test box is `box`.
+        for name in ["ethereum.lan", "box.lan", "box.local"]:
+            box.succeed(f"ip netns exec phone busybox nslookup -type=a {name} 10.42.0.1 | grep -q 'Address: 10.42.0.1$'")
+            # No IPv6 address is "no answer", never "no such name" (NXDOMAIN).
+            out = box.execute(f"ip netns exec phone busybox nslookup -type=aaaa {name} 10.42.0.1 2>&1")[1]
+            assert "NXDOMAIN" not in out, out
         box.succeed("ip netns exec phone curl -sf http://10.42.0.1:8001/ | grep -q 'Example game'")
         box.succeed("ip netns exec phone " + rpc_cmd("eth_chainId", [], "http://10.42.0.1:8545") + " | grep -q 0x12539a1")
 
